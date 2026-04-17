@@ -95,6 +95,7 @@ body {
   padding: 10px 16px;
   gap: 8px;
   flex: 1;
+  max-width: calc(100% - 200px);
   transition: border-color 0.2s;
 }
 .search-bar:focus-within { border-color: var(--primary); }

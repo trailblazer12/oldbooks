@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园二手书 · BookPass</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <div class="page active" id="page-home">
+    <div class="navbar">
+      <div class="logo">📚 BookPass</div>
+      <div class="search-bar" style="flex:1">
+        <span>🔍</span>
+        <input id="home-search-input" type="text" placeholder="搜索书名、ISBN…" />
+      </div>
+      <button class="search-btn" onclick="doSearch()">搜索</button>
+    </div>
+
+    <div class="section-title">📂 分类浏览</div>
+    <div class="category-grid">
+      <div class="cat-item" onclick="searchByCategory('数学')">
+        <div class="cat-icon">📐</div>
+        <div class="cat-name">数学</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('英语')">
+        <div class="cat-icon">🌍</div>
+        <div class="cat-name">英语</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('计算机')">
+        <div class="cat-icon">💻</div>
+        <div class="cat-name">计算机</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('经济')">
+        <div class="cat-icon">📊</div>
+        <div class="cat-name">经济</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('物理')">
+        <div class="cat-icon">⚛️</div>
+        <div class="cat-name">物理</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('化学')">
+        <div class="cat-icon">🧪</div>
+        <div class="cat-name">化学</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('文学')">
+        <div class="cat-icon">📖</div>
+        <div class="cat-name">文学</div>
+      </div>
+      <div class="cat-item" onclick="searchByCategory('考研')">
+        <div class="cat-icon">🎓</div>
+        <div class="cat-name">考研</div>
+      </div>
+    </div>
+
+    <!-- 最新上架 -->
+    <div class="section-title">🔥 最新上架</div>
+    <div class="book-list" id="home-book-list">
+      <!-- 由 JavaScript 动态填充 -->
+    </div>
+  </div>
+
+  <div class="page" id="page-search">
+
+    <div class="navbar">
+      <button class="nav-back" onclick="showPage('page-home')">←</button>
+      <div class="search-bar" style="flex:1">
+        <span>🔍</span>
+        <input id="search-input" type="text" placeholder="搜索书名…" />
+      </div>
+      <button class="search-btn" onclick="doSearchFromPage()">搜索</button>
+    </div>
+
+    <!-- 筛选条件 -->
+    <div class="filter-bar">
+      <div class="filter-chip active" onclick="applyFilter(this,'all')">全部</div>
+      <div class="filter-chip" onclick="applyFilter(this,'cheap')">¥30以下</div>
+      <div class="filter-chip" onclick="applyFilter(this,'good')">九成新↑</div>
+      <div class="filter-chip" onclick="applyFilter(this,'new')">最新上架</div>
+      <div class="filter-chip" onclick="applyFilter(this,'credit')">高信用卖家</div>
+    </div>
+
+    <!-- 结果列表 -->
+    <div id="result-count" style="padding:0 20px 8px;font-size:13px;color:#8E8E93"></div>
+    <div class="book-list" id="search-book-list"></div>
+  </div>
+
+
+  <!-- ==========================================
+       书籍详情页 (page-detail)
+       ========================================== -->
+  <div class="page" id="page-detail">
+
+    <div class="navbar">
+      <button class="nav-back" onclick="closeModal()">
+        <img src="documents/返回.png" style="border-radius: 50%;width: 90%;height: 90%;">
+      </button>
+      <div class="nav-title">书籍详情</div>
+    </div>
+
+    <!-- 封面大图 -->
+    <div class="detail-cover" id="detail-cover">📗</div>
+
+    <div class="detail-body">
+
+      <!-- 价格（最显眼，放最前面） -->
+      <div class="detail-price"><span>¥</span><span id="detail-price"></span></div>
+
+      <!-- 书名 -->
+      <div class="detail-title" id="detail-title"></div>
+
+      <!-- 成色 -->
+      <div class="detail-condition" id="detail-condition"></div>
+
+      <!-- 卖家描述 -->
+      <div class="detail-desc" id="detail-desc"></div>
+
+      <!-- 卖家信息卡片 -->
+      <div class="seller-card">
+        <div class="seller-avatar" id="seller-avatar"></div>
+        <div>
+          <div class="seller-name" id="seller-name"></div>
+          <div class="seller-credit" id="seller-credit"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部购买按钮（固定） -->
+    <div class="buy-bar">
+      <button class="buy-btn" onclick="buyBook()">📩 我要买这本书</button>
+    </div>
+
+  </div>
+
+</div><!-- end .app -->
+
+<div class="modal-overlay" id="success-modal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">下单成功！</div>
+    <div class="modal-desc">
+      已通知卖家，请等待对方确认。<br>
+      确认后系统会展示卖家联系方式，<br>
+      然后约好时间地点线下交接就好啦～
+    </div>
+    <button class="modal-btn" onclick="closeModal()">好的，我知道了</button>
+  </div>
+</div>
+<script src="booksData.js"></script>
+<script src="oldbooks.js"></script>
+</body>
+</html>

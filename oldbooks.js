@@ -2,6 +2,16 @@ let prevPage = 'page-home';
 let currentFilter = 'all';
 let currentKeyword = '';
 
+// 通过seller_id获取用户信息（处理边界情况：用户不存在时返回默认值）
+function getUserBySellerId(sellerId) {
+  const user = MOCK_USERS.find(u => u.user_id === sellerId);
+  return user || {
+    seller_name: '未知卖家',
+    seller_credit: 0,
+    phone: '未知号码' // 备用字段
+  };
+}
+
 // 切换页面显示
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => {
@@ -11,10 +21,13 @@ function showPage(pageId) {
   window.scrollTo(0, 0);
 }
 
-// 渲染书籍列表
+// 渲染书籍列表（从用户表获取卖家信息）
 function renderBooks(books, containerId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = books.map(book => `
+  container.innerHTML = books.map(book => {
+    // 关联用户信息
+    const seller = getUserBySellerId(book.seller_id);
+    return `
     <div class="book-card" onclick="showDetail(${book.book_id})">
       <div class="book-cover" style="font-size:36px">${book.icon}</div>
       <div class="book-info">
@@ -25,11 +38,11 @@ function renderBooks(books, containerId) {
         </div>
         <div class="book-footer">
           <div class="book-price"><span>¥</span>${book.price}</div>
-          <div class="seller-info">@${book.seller_name} ⭐${book.seller_credit}</div>
+          <div class="seller-info">@${seller.seller_name} ⭐${seller.seller_credit}</div>
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 // 成色数字转中文描述
@@ -70,11 +83,12 @@ function doSearchFromPage() {
   runSearch(currentKeyword);
 }
 
-// 核心搜索逻辑
+// 核心搜索逻辑（过滤已卖出书籍）
 function runSearch(keyword) {
   let results = MOCK_BOOKS.filter(book =>
-    book.title.toLowerCase().includes(keyword.toLowerCase()) ||
-    book.category.includes(keyword)
+    (book.title.toLowerCase().includes(keyword.toLowerCase()) ||
+    book.category.includes(keyword)) &&
+    book.is_sold === 0 // 关键：只保留未卖出的书籍
   );
   results = applyFilterLogic(results, currentFilter);
   
@@ -95,16 +109,25 @@ function applyFilter(chip, filterType) {
 function applyFilterLogic(books, filter) {
   if (filter === 'cheap')  return books.filter(b => b.price <= 30);
   if (filter === 'good')   return books.filter(b => b.condition >= 4);
-  if (filter === 'credit') return books.filter(b => b.seller_credit >= 95);
+  if (filter === 'credit') {
+    //筛选信用分需从用户表获取
+    return books.filter(book => {
+      const seller = getUserBySellerId(book.seller_id);
+      return seller.seller_credit >= 95;
+    });
+  }
   if (filter === 'new')    return [...books].reverse();
   return books;
 }
 
-// 显示书籍详情
+// 显示书籍详情（从用户表获取卖家信息）
 function showDetail(bookId) {
   const book = MOCK_BOOKS.find(b => b.book_id === bookId);
   if (!book) return;
 
+  // 关联用户信息
+  const seller = getUserBySellerId(book.seller_id);
+  
   prevPage = document.querySelector('.page.active').id;
   
   document.getElementById('detail-cover').textContent = book.icon;
@@ -113,12 +136,61 @@ function showDetail(bookId) {
   document.getElementById('detail-title').textContent = book.title;
   document.getElementById('detail-condition').textContent = `📦 成色：${getConditionText(book.condition)} | 📚 种类：${book.category}`;
   document.getElementById('detail-desc').textContent = `💬 卖家说：${book.description}`;
-  document.getElementById('seller-name').textContent = book.seller_name;
-  document.getElementById('seller-credit').textContent = `✅ 信用分 ${book.seller_credit} / 100`;
-  document.getElementById('seller-avatar').textContent = book.seller_name[0];
+  document.getElementById('seller-name').textContent = seller.seller_name;
+  document.getElementById('seller-credit').textContent = `✅ 信用分 ${seller.seller_credit} / 100`;
+  document.getElementById('seller-avatar').textContent = seller.seller_name[0];
 
   showPage('page-detail');
 }
+
+// 渲染已完成订单（取前2条）
+function renderFinishedOrders() {
+  // 筛选已完成订单并取前2条
+  const finishedOrders = MOCK_ORDERS
+    .filter(order => order.order_status === "FINISHED")
+    .slice(0, 2);
+  
+  const container = document.getElementById('finished-order-list');
+  
+  // 无订单时显示提示
+  if (finishedOrders.length === 0) {
+    container.innerHTML = '<div class="no-order">暂无已完成订单</div>';
+    return;
+  }
+
+  // 渲染订单卡片
+  container.innerHTML = finishedOrders.map(order => {
+    // 关联书籍信息（兼容书籍不存在的情况）
+    const book = MOCK_BOOKS.find(b => b.book_id === order.book_id) || { title: "未知书籍" };
+    // 关联买家/卖家信息（兼容用户不存在的情况）
+    const buyer = MOCK_USERS.find(u => u.user_id === order.buyer_id) || { seller_name: "未知买家" };
+    const seller = MOCK_USERS.find(u => u.user_id === order.seller_id) || { seller_name: "未知卖家" };
+
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <span class="order-id">订单 #${order.order_id}</span>
+          <span class="order-status">✅ 已完成</span>
+        </div>
+        <div class="order-body">
+          <div class="order-book">📚 ${book.title}</div>
+          <div class="order-participants">
+            <span>买家：${buyer.seller_name}</span>
+            <span>卖家：${seller.seller_name}</span>
+          </div>
+          <div class="order-time">
+            <span>下单：${order.order_time}</span>
+            <span>完成：${order.finish_time}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+// 初始化首页书籍列表（过滤已卖出的书籍）
+renderBooks(MOCK_BOOKS.filter(book => book.is_sold === 0), 'home-book-list');
+// 新增：初始化渲染已完成订单
+renderFinishedOrders();
 
 // 购买书籍逻辑
 function buyBook() {
@@ -147,5 +219,5 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearchFromPage();
 });
 
-// 初始化首页书籍列表
-renderBooks(MOCK_BOOKS, 'home-book-list');
+// 初始化首页书籍列表（过滤已卖出的书籍）
+renderBooks(MOCK_BOOKS.filter(book => book.is_sold === 0), 'home-book-list');
